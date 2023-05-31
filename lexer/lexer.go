@@ -9,6 +9,7 @@ type Lexer struct {
 	ch           rune   // current character support UTF8
 }
 
+// Create new lexer
 func New(input string) *Lexer {
 	l := &Lexer{input: input}
 	l.readChar()
