@@ -7,11 +7,19 @@ import (
 	"khanhanh_lang/token"
 )
 
+type (
+	prefixParseFn func() ast.Expression               //gets called when we encounter the associated token type in prefix position
+	infixParseFn  func(ast.Expression) ast.Expression // gets called when we encounter the token type in infix position
+)
+
 type Parser struct {
 	l         *lexer.Lexer
 	curToken  token.Token // same as position in the lexer, but instead of point to current ch , it point to current token
 	peekToken token.Token // same as the readPosition in the lexer , but  instead of point to next ch, it point to the next token (both cur and Peek are needed for decision making)
 	errors    []string
+
+	prefixParseFns map[token.TokenType]prefixParseFn //mechanism to check whether curToken has the associated prefixParseFn
+	infixParseFns  map[token.TokenType]infixParseFn  //mechanism to check whether curtoken has the  associated infixParseFn
 }
 
 // Advancce the current Token
@@ -20,12 +28,27 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
+// Add entry to prefix map
+func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
+}
+
+// Add entry to infix map
+func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
+	p.infixParseFns[tokenType] = fn
+}
+
 // Create new Parser
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{l: l, errors: []string{}}
 	// Read two token so the current and peak token are both set
 	p.nextToken()
 	p.nextToken()
+	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	p.registerPrefix(token.IDENT, p.parseIdentifier)
+	p.registerPrefix(token.INT, p.parseIntegerLiteral)
+	p.registerPrefix(token.BANG, p.parsePrefixExpression)
+	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 	return p
 }
 
@@ -53,7 +76,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
 
