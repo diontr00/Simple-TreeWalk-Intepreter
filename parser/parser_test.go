@@ -151,7 +151,7 @@ func testExpression(t *testing.T, statement ast.Statement) *ast.ExpressionStatem
 // Single test program length and  error check
 func testProgramLength(t *testing.T, program *ast.Program) {
 	if len(program.Statements) != 1 {
-		t.Fatalf("Program has not enough statements. got=%d", program.Statements[0])
+		t.Fatalf("Program has not enough statements. got=%d", len(program.Statements))
 	}
 }
 

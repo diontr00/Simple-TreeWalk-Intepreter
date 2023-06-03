@@ -61,3 +61,31 @@ func testLetStatement(t *testing.T, s ast.Statement, expectedName string) bool {
 	}
 	return true
 }
+
+func TestLetStatement2(t *testing.T) {
+	tests := []struct {
+		input              string
+		expectedIdentifier string
+		expectedValue      interface{}
+	}{
+		{"let x = 5;", "x", 5},
+		{"let y = true;", "y", true},
+		{"let foobar = y;", "foobar", "y"},
+	}
+	for _, test := range tests {
+		lex := lexer.New(test.input)
+		par := New(lex)
+		program := par.ParseProgram()
+		checkParserErrors(t, par)
+		testProgramLength(t, program)
+		stmt := program.Statements[0]
+		if !testLetStatement(t, stmt, test.expectedIdentifier) {
+			return
+		}
+		val := stmt.(*ast.LetStatement).Value
+		if !testLiteralExpression(t, val, test.expectedValue) {
+			return
+		}
+	}
+
+}
