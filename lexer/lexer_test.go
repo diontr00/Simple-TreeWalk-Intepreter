@@ -7,7 +7,7 @@ import (
 
 func TestBasicToken(t *testing.T) {
 
-	input := `=+-*/(){},;<>!9"🥳"if else return true false == != <= >=`
+	input := `=+-*/(){},;<>!9"🥳"if else return true false == != <= >="hello"`
 	tests := []struct {
 		expectedTokenType token.TokenType
 		expectedLiteral   string
@@ -37,6 +37,7 @@ func TestBasicToken(t *testing.T) {
 		{token.NOT_EQ, "!="},
 		{token.LT_EQ, "<="},
 		{token.GT_EQ, ">="},
+		{token.STRING, "hello"},
 	}
 
 	l := New(input)
