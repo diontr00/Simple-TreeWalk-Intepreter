@@ -6,6 +6,7 @@ import (
 	"io"
 	"khanhanh_lang/evaluator"
 	"khanhanh_lang/lexer"
+	"khanhanh_lang/object"
 	"khanhanh_lang/parser"
 	"os"
 
@@ -26,6 +27,7 @@ func init() {
 
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
+	tracker := object.NewTracker()
 	logFile, err := os.OpenFile("./log.test", os.O_CREATE|os.O_APPEND, 0644)
 	defer func() { logFile.Close() }()
 	if err != nil {
@@ -52,7 +54,7 @@ func Start(in io.Reader, out io.Writer) {
 			printError(out, p.Errors())
 			continue
 		}
-		evaluated := evaluator.Eval(program)
+		evaluated := evaluator.Eval(program, tracker)
 
 		if evaluated != nil {
 			_, err := io.WriteString(out, evaluated.Inspect())

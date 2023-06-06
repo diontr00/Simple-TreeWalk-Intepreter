@@ -6,6 +6,15 @@ import (
 
 type ObjectType string
 
+const (
+	INTEGER_OBJ      = "INTEGER"
+	BOOLEAN_OBJ      = "BOOLEAN"
+	NIL_OBJ          = "NIL"
+	STRING_OBJ       = "STRING"
+	RETURN_VALUE_OBJ = "RETURN_VALUE"
+	ERROR_OBJ        = "ERROR"
+)
+
 // Every value is wrapped inside a struct , which fulfill the Object interface
 type Object interface {
 	Type() ObjectType
@@ -38,13 +47,6 @@ type Nil struct{}
 func (n *Nil) Inspect() string  { return "nil" }
 func (n *Nil) Type() ObjectType { return NIL_OBJ }
 
-const (
-	INTEGER_OBJ = "INTEGER"
-	BOOLEAN_OBJ = "BOOLEAN"
-	NIL_OBJ     = "NIL"
-	STRING_OBJ  = "STRING"
-)
-
 // STRING
 // --------------------------------------------------------------------
 type String struct {
@@ -53,3 +55,22 @@ type String struct {
 
 func (s *String) Inspect() string  { return s.Value }
 func (s *String) Type() ObjectType { return STRING_OBJ }
+
+// RETURN
+// ---------------------------------------------------------------------
+
+// We need to wrap the value insid  object , since we have to keep track of it to evaluation
+type ReturnValue struct {
+	Value Object
+}
+
+func (rv *ReturnValue) Inspect() string  { return rv.Value.Inspect() }
+func (rv *ReturnValue) Type() ObjectType { return RETURN_VALUE_OBJ }
+
+// ERROR
+type Error struct {
+	Message string
+}
+
+func (e *Error) Type() ObjectType { return ERROR_OBJ }
+func (e *Error) Inspect() string  { return e.Message }

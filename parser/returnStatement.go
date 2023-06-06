@@ -9,9 +9,10 @@ func (p *Parser) parseReturnStatement() ast.Statement {
 	stmt := &ast.ReturnStatement{Token: p.curToken}
 	p.nextToken()
 	stmt.ReturnValue = p.parseExpression(LOWEST)
-	for !p.curTokenIs(token.SEMICOLON) {
+	for !p.curTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.EOF) {
 		p.nextToken()
 	}
+
 	return stmt
 
 }

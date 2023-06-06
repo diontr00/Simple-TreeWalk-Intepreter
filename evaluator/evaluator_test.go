@@ -8,8 +8,10 @@ import (
 	"testing"
 )
 
+type ErrorMesssage string
+
 // Literals
-func TestLiteral(t *testing.T) {
+func TestEvaluator(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected any
@@ -32,7 +34,6 @@ func TestLiteral(t *testing.T) {
 		{`!"hello"`, false},
 		{"-5", int64(-5)},
 		{"--10", int64(10)},
-		{"-true", nil},
 		// Infix
 		{"5 + 5 + 5 + 5 -10", int64(10)},
 		{"2 * 2 * 2 * 2 * 2", int64(32)},
@@ -65,6 +66,36 @@ func TestLiteral(t *testing.T) {
 		{`"hello" == "hello"`, true},
 		{`"hello" != "hello"`, false},
 		{`"hello" * 2`, "hellohello"},
+		// Condition
+		{"if(true) {10}", int64(10)},
+		{"if(false){10}", nil},
+		{"if (1) {10}", int64(10)},
+		{"if (1 < 2) { 10 }", int64(10)},
+		{"if (1 > 2) {10} else {20}", int64(20)},
+		{"if (2 > 1) {10} else {20}", int64(10)},
+		// Return
+		{"return 10", int64(10)},
+		{"return  10; 9;", int64(10)},
+		{"return 2 * 5; 9;", int64(10)},
+		{"9; return 2 * 5 ; 9", int64(10)},
+		{"if(10 < 11) { if (9 > 2){return 9} return 10}", int64(9)},
+		//Error
+		{"5 + true;", ErrorMesssage("[Error]: Mismatch INTEGER + BOOLEAN")},
+		{"5 + true; 5;", ErrorMesssage("[Error]: Mismatch INTEGER + BOOLEAN")},
+		{"-true", ErrorMesssage("[Error]: Unknown operator -BOOLEAN")},
+		{"true + false", ErrorMesssage("[Error]: Unknown operator: BOOLEAN + BOOLEAN")},
+		{"5; true + false; 5", ErrorMesssage("[Error]: Unknown operator: BOOLEAN + BOOLEAN")},
+		{
+			"if (10 > 1) {true + false}",
+			ErrorMesssage("[Error]: Unknown operator : BOOLEAN + BOOLEAN"),
+		},
+		{"foobar", ErrorMesssage("[Warn]: Identifier not found")},
+		//Binding
+		{"let a = 5; a;", int64(5)},
+		{"let a = 5 * 5; a;", int64(25)},
+		{"let a = 5; let b = a; b;", int64(5)},
+		{"let a = 5; let b = a; let c = a + b + 5; c;", int64(15)},
+		{"foobar", ErrorMesssage("[Error]: Identifier not found: foobar")},
 	}
 
 	for _, test := range tests {
@@ -76,8 +107,9 @@ func TestLiteral(t *testing.T) {
 func testEval(input string) object.Object {
 	lex := lexer.New(input)
 	par := parser.New(lex)
+	tracker := object.NewTracker()
 	program := par.ParseProgram()
-	return Eval(program)
+	return Eval(program, tracker)
 }
 
 func testTypeObject(t *testing.T, obj object.Object, expect any) bool {
@@ -127,8 +159,15 @@ func testTypeObject(t *testing.T, obj object.Object, expect any) bool {
 			t.Errorf("expect nil as the value  but got : %s", result.Inspect())
 		}
 		return false
+	case ErrorMesssage:
+		_, ok := obj.(*object.Error)
+		if !ok {
+			t.Errorf("no error object returned. got=%T(%+v)", obj, obj)
+			t.Errorf("Expect : %s", expect)
+		}
+
 	default:
-		fmt.Printf("Not yet implemented for %T", typi)
+		fmt.Printf("Not yet implemented for %T \n", typi)
 		return false
 
 	}
